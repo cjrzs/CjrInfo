@@ -32,15 +32,28 @@ class ReceiveWeChatMsgView(APIView):
         receive_msg = data.get('Content')
         # TODO 重复请求待补充 日志待收集
         msg_id = data.get('MsgId')
-        content = command_server.CommandHandler(receive_msg).process_message()
+        message_type = data.get('MsgType')
+        event = data.get('Event')
         res = {
             'to_user_name': from_user_name,
             'from_user_name': to_user_name,
-            'msg_content_type': 'text',
-            'response_content': content
         }
-        if isinstance(content, dict):
-            res['msg_content_type'] = 'news'
+        if message_type == 'event':
+            res.update({
+                'msg_content_type': 'text',
+                'response_content': '你好，欢迎你关注我，由于微信官方接口更新，暂时获取不了新的图文消息，因此希望您能先看一下'
+                                    '写给你的一封信。https://mp.weixin.qq.com/s/FNVnAVa3NQZNuZGHEbMV9g'
+            })
+        else:
+            content = command_server.CommandHandler(receive_msg).process_message()
+            if not content:
+                content = '没有相关文章'
+            res.update({
+                'msg_content_type': 'text',
+                'response_content': content
+            })
+            if isinstance(content, dict):
+                res['msg_content_type'] = 'news'
         return CjrResponse(res)
 
 
